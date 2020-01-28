@@ -1,9 +1,38 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+import {Link} from 'react-router-dom';
+import BookmarksContext from '../BookmarksContext'
 import Rating from '../Rating/Rating';
+import config from '../config';
 import './BookmarkItem.css';
+
+
+function deleteBookmarkRequest(bookmarkId, cb) {
+  fetch(config.API_ENDPOINT + `/${bookmarkId}`, {
+    method: 'DELETE',
+    headers: {
+      'content-type': 'application/json',
+      'authorization': `bearer ${config.API_KEY}`
+    }
+  })
+    .then(res => {
+      if (!res.ok) {
+        return res.json().then(error => Promise.reject(error))
+      }
+      return res.json()
+    })
+    .then(data => {
+      cb(bookmarkId)
+    })
+    .catch(error => {
+      console.error(error)
+    })
+}
 
 export default function BookmarkItem(props) {
   return (
+    <BookmarksContext.Consumer>
+    {(context) => (
     <li className='BookmarkItem'>
       <div className='BookmarkItem__row'>
         <h3 className='BookmarkItem__title'>
@@ -20,17 +49,35 @@ export default function BookmarkItem(props) {
         {props.description}
       </p>
       <div className='BookmarkItem__buttons'>
+      <Link to={`/edit/${props.id}`}>
+              Edit
+            </Link>
+            {' '}
         <button
           className='BookmarkItem__description'
-          onClick={() => props.onClickDelete(props.id)}
+          onClick={() => deleteBookmarkRequest(props.id, context.deleteBookmarkRequest)}
         >
           Delete
         </button>
       </div>
     </li>
+    )}
+    </BookmarksContext.Consumer>
   )
 }
 
 BookmarkItem.defaultProps = {
   onClickDelete: () => {},
+}
+
+BookmarkItem.propTypes = {
+  id: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.string,
+  ]).isRequired,
+  title: PropTypes.string.isRequired,
+  url: PropTypes.string.isRequired,
+  desciption: PropTypes.string,
+  rating: PropTypes.number.isRequired,
+  onClickDelete: PropTypes.func,
 }
